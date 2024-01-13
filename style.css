@@ -1,0 +1,21 @@
+* {
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    background-color: #253227;
+    text-align: center;
+}
+
+#score {
+    font-family: serif;
+    font-size: 3em;
+    background: -webkit-linear-gradient(white, #67717f);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+#game {
+    background-color: #202822;
+}
