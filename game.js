@@ -18,14 +18,25 @@ const snake = {
     initialSize: 3,
 };
 
+const food = {
+    position: {x: 0, y: 0},
+    color: '#e7471d'
+};
+
 const game = {
     score: 0,
     isGameActive: false,
     init: function () {
+        clearInterval(game.loop);
+        this.score = 0;
+        this.isGameActive = false;
+        this.updateScore();
         this.setCanvasSize();
-        this.setBackground();
+        this.drawBackground();
         this.setSnake();
         this.drawSnake();
+        this.setFood();
+        this.drawFood();
     },
     clearCanvas: function() {
         const ctx = settings.context();
@@ -35,7 +46,7 @@ const game = {
        settings.canvas.width = settings.cellCount * settings.cellSize;
        settings.canvas.height = settings.cellCount * settings.cellSize;
     },
-    setBackground: function() {
+    drawBackground: function() {
         const ctx = settings.context();
 
         for (let row = 0; row < settings.cellCount; ++row) {
@@ -57,7 +68,10 @@ const game = {
         ];
     },
     moveSnake: function () {     
-        let head = {x: snake.tail[0].x, y: snake.tail[0].y};
+        let head = {
+            x: snake.tail[0].x, 
+            y: snake.tail[0].y
+        };
 
         switch (snake.direction) {
             case 'down':
@@ -73,8 +87,24 @@ const game = {
                 head.x++;
                 break;  
         }
+
+        if (this.isSnakeCollision(head) || this.isOutOfField(head))
+        {
+            this.init();
+            return;
+        }
+
         snake.tail.unshift(head);
         snake.tail.pop();
+
+        if (this.isSnakeCollision(food.position))
+        {
+            let newHead = {x: food.position.x, y: food.position.y};
+            snake.tail.unshift(newHead);
+            this.setFood();
+            this.score++;
+            this.updateScore();
+        }
     }, 
     drawSnake: function () {
         const ctx = settings.context();
@@ -88,12 +118,45 @@ const game = {
                 settings.cellSize);
         });
     },  
+    setFood: function () {
+        let result = {x: 0, y: 0};
+
+        do {
+            result.x = this.getRandomNumber(settings.cellCount);
+            result.y = this.getRandomNumber(settings.cellCount);
+        } while (this.isSnakeCollision(result));
+
+        food.position.x = result.x;
+        food.position.y = result.y;
+    },
+    getRandomNumber: function(max) {
+        return Math.floor(Math.random() * (max)); //we need to add 1, but array starts with 0, so no need
+    },
+    isSnakeCollision: function(point) {
+        return snake.tail.some(position => position.x === point.x && position.y === point.y); 
+    },
+    isOutOfField: function (point) {
+        return point.x >= settings.cellCount || point.y >= settings.cellCount || point.x < 0 || point.y < 0;
+    },
+    updateScore: function() {
+        settings.score.innerHTML = game.score;
+    },
+    drawFood: function() {
+        const ctx = settings.context();
+        ctx.fillStyle = food.color;
+
+        ctx.fillRect(
+            food.position.x * settings.cellSize, 
+            food.position.y * settings.cellSize,
+            settings.cellSize, 
+            settings.cellSize);
+    },
     gameLoop: function() {
-        console.log(1);
         this.clearCanvas()
         this.moveSnake();
-        this.setBackground();
+        this.drawBackground();
         this.drawSnake();
+        this.drawFood();
     }    
 };
 
@@ -110,7 +173,8 @@ window.addEventListener("keydown", (event) => {
 
     if (!game.isGameActive) {
         game.isGameActive = true;
-        setInterval(() => {
+        
+        game.loop = setInterval(() => {
             requestAnimationFrame(() => {
                game.gameLoop();
             });
