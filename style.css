@@ -13,6 +13,7 @@ body {
     font-size: 3em;
     background: -webkit-linear-gradient(white, #67717f);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

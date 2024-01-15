@@ -1,6 +1,6 @@
 const settings = {
     canvas: document.getElementById('game'),
-    context: function () {
+    context: function() {
         return this.canvas.getContext('2d');
     },
     score: document.getElementById('score'),
@@ -9,71 +9,69 @@ const settings = {
     fr: 10,
     cellColor: '#3f5543',
     cellColorAlt: '#3b4f3f',
+    clearCanvas: function() {
+        const ctx = this.context();
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },    
+    setCanvasSize: function() {
+       this.canvas.width = this.cellCount * this.cellSize;
+       this.canvas.height = this.cellCount * this.cellSize;
+    },
+    showScore: function(score) {
+        this.score.innerHTML = score;
+    },
+    getRandomNumber: function() {
+        return Math.floor(Math.random() * (this.cellCount));
+    },
+    drawBackground: function() {
+        const ctx = this.context();
+
+        for (let row = 0; row < this.cellCount; ++row) {
+            for (let column = 0; column < this.cellCount; ++column) {
+                ctx.fillStyle =  (row + column) % 2 === 0 ? this.cellColor : this.cellColorAlt;
+                ctx.fillRect(
+                    column * this.cellSize, 
+                    row * this.cellSize,
+                    this.cellSize, 
+                    this.cellSize);
+            }
+        }
+    }
 };
 
 const snake = {
     tail: [],
-    direction: 'right',
+    direction: '',
     color: '#4a78f0',
     initialSize: 3,
-};
-
-const food = {
-    position: {x: 0, y: 0},
-    color: '#e7471d'
-};
-
-const game = {
-    score: 0,
-    isGameActive: false,
-    init: function () {
-        clearInterval(game.loop);
-        this.score = 0;
-        this.isGameActive = false;
-        this.updateScore();
-        this.setCanvasSize();
-        this.drawBackground();
-        this.setSnake();
-        this.drawSnake();
-        this.setFood();
-        this.drawFood();
-    },
-    clearCanvas: function() {
-        const ctx = settings.context();
-        ctx.clearRect(0, 0, settings.canvas.width, settings.canvas.height);
-    },    
-    setCanvasSize: function () {
-       settings.canvas.width = settings.cellCount * settings.cellSize;
-       settings.canvas.height = settings.cellCount * settings.cellSize;
-    },
-    drawBackground: function() {
-        const ctx = settings.context();
-
-        for (let row = 0; row < settings.cellCount; ++row) {
-            for (let column = 0; column < settings.cellCount; ++column) {
-                ctx.fillStyle =  (row + column) % 2 === 0 ? settings.cellColor : settings.cellColorAlt;
-                ctx.fillRect(
-                    column * settings.cellSize, 
-                    row * settings.cellSize,
-                    settings.cellSize, 
-                    settings.cellSize);
-            }
+    setSnake: function() {
+        this.tail = [];
+        this.direction = 'right';
+        
+        for (let i = 0; i < this.initialSize; i++)
+        {
+            this.tail.unshift({x: Math.ceil(settings.cellCount / 5) + i, y: Math.floor(settings.cellCount / 2)});
         }
     },
-    setSnake: function () {
-        snake.tail = [
-            {x: 5, y: 3}, 
-            {x: 4, y: 3}, 
-            {x: 3, y: 3}
-        ];
-    },
-    moveSnake: function () {     
+    drawSnake: function() {
+        const ctx = settings.context();
+        ctx.fillStyle = this.color;
+
+        this.tail.forEach(cell => {
+            ctx.fillRect(
+                cell.x * settings.cellSize, 
+                cell.y * settings.cellSize,
+                settings.cellSize, 
+                settings.cellSize);
+        });
+    }, 
+    getNextPosition: function() {
         let head = {
-            x: snake.tail[0].x, 
-            y: snake.tail[0].y
+            x: this.tail[0].x, 
+            y: this.tail[0].y
         };
 
-        switch (snake.direction) {
+        switch (this.direction) {
             case 'down':
                 head.y++;
                 break;
@@ -88,76 +86,99 @@ const game = {
                 break;  
         }
 
-        if (this.isSnakeCollision(head) || this.isOutOfField(head))
-        {
-            this.init();
-            return;
-        }
+        return head;
+    },
+    applyNextPosition: function(point, cutTail) {
+       this.tail.unshift(point);
 
-        snake.tail.unshift(head);
-        snake.tail.pop();
+       if (cutTail === true)
+       {
+           this.tail.pop();
+       }
+    }
+};
 
-        if (this.isSnakeCollision(food.position))
-        {
-            let newHead = {x: food.position.x, y: food.position.y};
-            snake.tail.unshift(newHead);
-            this.setFood();
-            this.score++;
-            this.updateScore();
-        }
-    }, 
-    drawSnake: function () {
-        const ctx = settings.context();
-        ctx.fillStyle = snake.color;
-
-        snake.tail.forEach(cell => {
-            ctx.fillRect(
-                cell.x * settings.cellSize, 
-                cell.y * settings.cellSize,
-                settings.cellSize, 
-                settings.cellSize);
-        });
-    },  
-    setFood: function () {
+const food = {
+    position: {x: 0, y: 0},
+    color: '#e7471d',
+    setFood: function (excludedCells) {
         let result = {x: 0, y: 0};
 
         do {
-            result.x = this.getRandomNumber(settings.cellCount);
-            result.y = this.getRandomNumber(settings.cellCount);
-        } while (this.isSnakeCollision(result));
+            result.x = settings.getRandomNumber();
+            result.y = settings.getRandomNumber();
+        } while (collisions.isSnakePointCollision(result, excludedCells));
 
-        food.position.x = result.x;
-        food.position.y = result.y;
-    },
-    getRandomNumber: function(max) {
-        return Math.floor(Math.random() * (max)); //we need to add 1, but array starts with 0, so no need
-    },
-    isSnakeCollision: function(point) {
-        return snake.tail.some(position => position.x === point.x && position.y === point.y); 
-    },
-    isOutOfField: function (point) {
-        return point.x >= settings.cellCount || point.y >= settings.cellCount || point.x < 0 || point.y < 0;
-    },
-    updateScore: function() {
-        settings.score.innerHTML = game.score;
+        this.position.x = result.x;
+        this.position.y = result.y;
     },
     drawFood: function() {
         const ctx = settings.context();
-        ctx.fillStyle = food.color;
+        ctx.fillStyle = this.color;
 
         ctx.fillRect(
             food.position.x * settings.cellSize, 
             food.position.y * settings.cellSize,
             settings.cellSize, 
             settings.cellSize);
+    }
+};
+
+const game = {
+    score: 0,
+    isGameActive: false,
+    init: function () {
+        this.isGameActive = false;
+        clearInterval(this.loop);
+        this.score = 0;
+        settings.showScore(this.score);
+        settings.setCanvasSize();
+        snake.setSnake();
+        food.setFood(snake.tail);
+        settings.clearCanvas();
+        settings.drawBackground();
+        snake.drawSnake();
+        food.drawFood();
     },
+    incrementScore: function() {
+        this.score++;
+    },
+    moveSnake: function () {     
+        let head = snake.getNextPosition();
+
+        if (collisions.isSnakePointCollision(head, snake.tail) || collisions.isOutOfField(head, settings.cellCount))
+        {
+            this.init();
+            return;
+        }
+
+        snake.applyNextPosition(head, true);
+
+        if (collisions.isSnakePointCollision(food.position, snake.tail))
+        {
+            let head = {...food.position};
+            snake.applyNextPosition(head, false);
+            this.incrementScore();
+            settings.showScore(this.score);
+            food.setFood(snake.tail);
+        }
+    },  
     gameLoop: function() {
-        this.clearCanvas()
+        settings.clearCanvas()
         this.moveSnake();
-        this.drawBackground();
-        this.drawSnake();
-        this.drawFood();
+        settings.drawBackground();
+        snake.drawSnake();
+        food.drawFood();
     }    
+};
+
+const collisions = {
+    isSnakePointCollision: function(point, tail) {
+        return tail.some(position => position.x === point.x && position.y === point.y); 
+    },
+    isOutOfField: function (point, cellCount) {
+        return point.x >= cellCount || point.y >= cellCount || point.x < 0 || point.y < 0;
+    },
 };
 
 window.addEventListener("keydown", (event) => {
