@@ -88,7 +88,7 @@ const snake = {
 
         return head;
     },
-    applyNextPosition: function(point, cutTail) {
+    setNextPosition: function(point, cutTail) {
        this.tail.unshift(point);
 
        if (cutTail === true)
@@ -152,12 +152,12 @@ const game = {
             return;
         }
 
-        snake.applyNextPosition(head, true);
+        snake.setNextPosition(head, true);
 
         if (collisions.isSnakePointCollision(food.position, snake.tail))
         {
             let head = {...food.position};
-            snake.applyNextPosition(head, false);
+            snake.setNextPosition(head, false);
             this.incrementScore();
             settings.showScore(this.score);
             food.setFood(snake.tail);
