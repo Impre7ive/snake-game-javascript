@@ -50,7 +50,11 @@ const snake = {
         
         for (let i = 0; i < this.initialSize; i++)
         {
-            this.tail.unshift({x: Math.ceil(settings.cellCount / 5) + i, y: Math.floor(settings.cellCount / 2)});
+            this.tail.unshift(
+                {
+                    x: Math.ceil(settings.cellCount / 5) + i,
+                    y: Math.floor(settings.cellCount / 2)
+                });
         }
     },
     drawSnake: function() {
