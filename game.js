@@ -6,7 +6,7 @@ const settings = {
     score: document.getElementById('score'),
     cellCount: 10,
     cellSize: 50,
-    fr: 10,
+    frameRate: 10,
     cellColor: '#3f5543',
     cellColorAlt: '#3b4f3f',
     clearCanvas: function() {
@@ -131,9 +131,10 @@ const food = {
 const game = {
     score: 0,
     isGameActive: false,
+    lastTimestamp: 0,
     init: function () {
         this.isGameActive = false;
-        clearInterval(this.loop);
+        this.lastTimestamp = 0;
         this.score = 0;
         settings.showScore(this.score);
         settings.setCanvasSize();
@@ -167,12 +168,23 @@ const game = {
             food.setFood(snake.tail);
         }
     },  
-    gameLoop: function() {
-        settings.clearCanvas()
-        this.moveSnake();
-        settings.drawBackground();
-        snake.drawSnake();
-        food.drawFood();
+    gameLoop: function(timestamp) {
+        if (!game.isGameActive) {
+            return;
+        }
+
+        let elapsed = timestamp - this.lastTimestamp;
+        
+        if (elapsed > 1000 / settings.frameRate) {
+            settings.clearCanvas()
+            this.moveSnake();
+            settings.drawBackground();
+            snake.drawSnake();
+            food.drawFood();
+            this.lastTimestamp = timestamp;
+        }
+        
+        requestAnimationFrame(() => game.gameLoop(performance.now()));
     }    
 };
 
@@ -198,12 +210,7 @@ window.addEventListener("keydown", (event) => {
 
     if (!game.isGameActive) {
         game.isGameActive = true;
-        
-        game.loop = setInterval(() => {
-            requestAnimationFrame(() => {
-               game.gameLoop();
-            });
-        }, 1000 / settings.fr );
+        requestAnimationFrame(() => game.gameLoop(performance.now()));
     }
 });
 
