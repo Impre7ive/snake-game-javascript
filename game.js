@@ -157,8 +157,6 @@ const game = {
             return;
         }
 
-        snake.setNextPosition(head, true);
-
         if (collisions.isSnakePointCollision(food.position, snake.tail))
         {
             let head = {...food.position};
@@ -166,6 +164,8 @@ const game = {
             this.incrementScore();
             settings.showScore(this.score);
             food.setFood(snake.tail);
+        } else {
+            snake.setNextPosition(head, true);
         }
     },  
     gameLoop: function(timestamp) {
